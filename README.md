@@ -5,15 +5,15 @@ A lightweight Flask-based API to generate and decode authentication tokens using
 ---
 
 🚀 Endpoint
-
-GET /token?uid={uid}&password={password}
-
+```
+http://127.0.0.1:5000/token?uid={uid}&password={password}
+```
 ---
 
 📌 Example Request
-
+```
 /token?uid=4644343519&password=866D6D72
-
+```
 ---
 
 📥 Query Parameters
@@ -25,7 +25,7 @@ password| string| ✅ Yes| Account password
 ---
 
 ✅ Successful Response
-
+```
 {
   "status": "live",
   "api": "example_api",
@@ -82,7 +82,7 @@ password| string| ✅ Yes| Account password
     "external_uid": "4644343519"
   }
 }
-
+```
 ---
 
 ❌ Error Response

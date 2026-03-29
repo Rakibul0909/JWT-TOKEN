@@ -16,7 +16,6 @@ from urllib3.exceptions import InsecureRequestWarning
 import base64
 import json
 import time
-import hashlib
 from datetime import datetime, timezone, timedelta
 
 # Ignore SSL certificate warnings
@@ -28,7 +27,7 @@ AES_IV = b'6oyZDr22E3ychjM%'
 
 app = Flask(__name__)
 
-# IST timezone (UTC+5:30)
+# IST timezone (UTC+5:30) - kept for possible future use, but not used in minimal time_info
 IST = timezone(timedelta(hours=5, minutes=30))
 
 def get_token(password, uid):
@@ -194,7 +193,8 @@ def process_token(uid, password):
                     "api": parsed_resp.get("api", "N/A"),
                     "region": parsed_resp.get("region", "N/A"),
                     "status": parsed_resp.get("status", "live"),
-                    "access_token": token_data.get("access_token")  # Real OAuth token
+                    "access_token": token_data.get("access_token"),  # Real OAuth token
+                    "open_id": token_data.get("open_id")            # ✅ Real open_id from server
                 }
             except Exception as e:
                 return {"error": f"Failed to deserialize response: {e}"}
@@ -229,9 +229,8 @@ def get_token_response():
     expiry = int(payload.get("exp", 0) or 0)
     remaining = max(0, expiry - current_time)
 
-    # Clean open_id
-    raw_uid = str(payload.get("external_uid"))
-    open_id_clean = hashlib.md5(raw_uid.encode()).hexdigest()
+    # ✅ Use the real open_id from the token response
+    real_open_id = result.get("open_id", "")
 
     # Fallback for iat (if missing, assume 8-hour token)
     iat = payload.get("iat")
@@ -240,7 +239,7 @@ def get_token_response():
     else:
         iat = int(iat)
 
-    # 🔥 MINIMAL time_info (only 2 fields)
+    # Minimal time_info (only 2 fields)
     time_info = {
         "issued_at_utc": format_utc(iat),
         "expiry_time_utc": format_utc(expiry)
@@ -284,7 +283,7 @@ def get_token_response():
             "emulator_score": payload.get("emulator_score")
         },
 
-        "time_info": time_info,   # ✅ Only issued_at_utc & expiry_time_utc
+        "time_info": time_info,
 
         "meta": {
             "success": True,
@@ -296,7 +295,7 @@ def get_token_response():
             "jwt_token": jwt_token,
             "access_token": result.get("access_token"),
             "login_type": "guest",
-            "open_id": open_id_clean,
+            "open_id": real_open_id,          # ✅ Now correct: real open_id from server
             "external_id": payload.get("external_id"),
             "external_uid": payload.get("external_uid")
         }
